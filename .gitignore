@@ -9,3 +9,7 @@ venv/
 /data/
 /models/
 spotify_token.json
+*.tmp
+*.ckpt
+*.pt
+*.pth
