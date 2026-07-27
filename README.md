@@ -24,6 +24,9 @@ src/musicrec/
 
   ingest/
     ingest_tracks.py          upserts artist/album/track rows + audio embedding
+    spotify_auth.py           Spotify OAuth (Authorization Code + PKCE), token cache
+    spotify_client.py         thin wrapper over the Spotify Web API endpoints used here
+    spotify_ingest.py         pulls a user's recently-played + saved tracks into listening_events
 
   recommend/
     taste_profile.py          per-user, per-bucket weighted centroid of
@@ -54,11 +57,29 @@ export DATABASE_URL=postgresql://localhost/musicrec
 ./scripts/init_db.sh        # requires the `vector` extension to be installable
 ```
 
+## Ingesting real Spotify history
+
+1. Create an app at https://developer.spotify.com/dashboard.
+2. Add `http://127.0.0.1:8080/callback` as a Redirect URI (must match exactly —
+   Spotify requires the literal IP `127.0.0.1`, not `localhost`).
+3. `export SPOTIFY_CLIENT_ID=<your client id>` (no client secret needed — this
+   uses the Authorization Code + PKCE flow).
+4. `python -m musicrec.ingest.spotify_ingest` — opens a browser for one-time
+   login, then writes your recently-played + saved tracks into
+   `listening_events`. Safe to re-run; it dedupes and upserts.
+
+Note: Spotify doesn't provide raw audio or audio-feature vectors to new apps
+(restricted since Nov 2024), so this only populates listening history —
+pair it with `ingest_tracks.py` against a separate audio-bearing catalog
+(e.g. Jamendo, Free Music Archive, or the Million Song Dataset) to get
+`track_embeddings` for content-based similarity.
+
 ## Status
 
 Scaffold only — schema, connection plumbing, and the pipeline's function
 signatures are in place; each module is a working skeleton that still needs:
 
-- a real metadata/audio ingestion source wired into `ingest_tracks.py`
+- a real audio catalog wired into `ingest_tracks.py` to get content embeddings
+- ISRC-based matching between Spotify tracks and an audio-bearing catalog
 - a trained collaborative-filtering model feeding `rerank.hybrid_rerank`
 - an evaluation harness (offline recall@K, later online skip/save-rate)
