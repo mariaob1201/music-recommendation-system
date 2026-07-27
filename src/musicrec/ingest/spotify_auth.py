@@ -87,6 +87,7 @@ def _run_authorization_flow() -> dict:
             "client_id": SPOTIFY_CLIENT_ID,
             "code_verifier": verifier,
         },
+        timeout=30,
     )
     response.raise_for_status()
     return response.json()
@@ -100,6 +101,7 @@ def _refresh_tokens(refresh_token: str) -> dict:
             "refresh_token": refresh_token,
             "client_id": SPOTIFY_CLIENT_ID,
         },
+        timeout=30,
     )
     response.raise_for_status()
     tokens = response.json()

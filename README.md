@@ -27,6 +27,8 @@ src/musicrec/
     spotify_auth.py           Spotify OAuth (Authorization Code + PKCE), token cache
     spotify_client.py         thin wrapper over the Spotify Web API endpoints used here
     spotify_ingest.py         pulls a user's recently-played + saved tracks into listening_events
+    jamendo_client.py         thin wrapper over the Jamendo API (public catalog + audio)
+    jamendo_ingest.py         bulk-ingests Jamendo tracks + computes real CLAP embeddings
 
   recommend/
     taste_profile.py          per-user, per-bucket weighted centroid of
@@ -70,16 +72,34 @@ export DATABASE_URL=postgresql://localhost/musicrec
 
 Note: Spotify doesn't provide raw audio or audio-feature vectors to new apps
 (restricted since Nov 2024), so this only populates listening history —
-pair it with `ingest_tracks.py` against a separate audio-bearing catalog
-(e.g. Jamendo, Free Music Archive, or the Million Song Dataset) to get
-`track_embeddings` for content-based similarity.
+pair it with the Jamendo ingestion below (or `ingest_tracks.py` against
+another audio-bearing catalog) to get `track_embeddings` for content-based
+similarity.
+
+## Ingesting a real audio catalog (Jamendo)
+
+1. Get a free `client_id` at https://devportal.jamendo.com/ (instant, no
+   OAuth needed for these read-only endpoints).
+2. `export JAMENDO_CLIENT_ID=<your client id>`
+3. `pip install -e ".[audio]"` — this step downloads real audio and computes
+   CLAP embeddings, so the heavy deps are required here (unlike the
+   Spotify ingestion above).
+4. `python -m musicrec.ingest.jamendo_ingest --limit 200 --tags jazz` —
+   pulls tracks matching the tag, downloads each preview, embeds it, and
+   upserts into `tracks` / `track_embeddings`. Safe to re-run: upserts on
+   `jamendo_id`, skips tracks that already have an embedding.
+
+This is what `candidate_gen.py` actually searches against — run it before
+expecting `generate_candidates()` to return anything.
 
 ## Status
 
-Scaffold only — schema, connection plumbing, and the pipeline's function
-signatures are in place; each module is a working skeleton that still needs:
+Schema, connection plumbing, and both ingestion paths (Spotify for history,
+Jamendo for real audio + embeddings) work end-to-end for a single user /
+small catalog. Still needed:
 
-- a real audio catalog wired into `ingest_tracks.py` to get content embeddings
-- ISRC-based matching between Spotify tracks and an audio-bearing catalog
+- ISRC-based matching between Spotify tracks and the Jamendo catalog (right
+  now they're ingested as unrelated tracks, so a track played on Spotify
+  won't be recognized as "already heard" against the Jamendo candidate pool)
 - a trained collaborative-filtering model feeding `rerank.hybrid_rerank`
 - an evaluation harness (offline recall@K, later online skip/save-rate)

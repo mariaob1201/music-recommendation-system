@@ -15,6 +15,10 @@ SPOTIFY_TOKEN_CACHE_PATH = Path(
     os.environ.get("SPOTIFY_TOKEN_CACHE_PATH", Path.home() / ".musicrec" / "spotify_token.json")
 )
 
+# Free, instant registration at https://devportal.jamendo.com/ — no OAuth
+# needed for the read-only catalog endpoints used here.
+JAMENDO_CLIENT_ID = os.environ.get("JAMENDO_CLIENT_ID")
+
 # Must match the `vector(N)` dimension used in db/migrations/0001_init.sql.
 EMBED_DIM = 512
 

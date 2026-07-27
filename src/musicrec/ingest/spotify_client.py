@@ -19,7 +19,7 @@ class SpotifyClient:
     def _get(self, path: str, params: dict | None = None) -> dict:
         url = path if path.startswith("http") else f"{API_BASE}{path}"
         response = requests.get(
-            url, headers={"Authorization": f"Bearer {get_access_token()}"}, params=params
+            url, headers={"Authorization": f"Bearer {get_access_token()}"}, params=params, timeout=30
         )
         if response.status_code == 429:
             time.sleep(int(response.headers.get("Retry-After", 1)))
