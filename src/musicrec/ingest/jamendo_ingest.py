@@ -129,7 +129,15 @@ def ingest_jamendo_catalog(limit: int = 200, tags: str | None = None, batch_size
                 for track in page:
                     track_id = _upsert_track(cur, track)
                     if not _has_embedding(cur, track_id) and track.get("audiodownload"):
-                        _embed_and_store(cur, track_id, track["audiodownload"])
+                        try:
+                            _embed_and_store(cur, track_id, track["audiodownload"])
+                        except requests.RequestException as e:
+                            # Jamendo's storage CDN occasionally 500s on a
+                            # specific track; skip it rather than losing the
+                            # rest of the batch. The track row is kept
+                            # without an embedding and will be retried on
+                            # the next run.
+                            print(f"Skipping track {track_id} ({track.get('name')}): {e}")
                     processed += 1
             conn.commit()
 
