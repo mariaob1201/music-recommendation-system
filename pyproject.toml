@@ -1,0 +1,21 @@
+[project]
+name = "musicrec"
+version = "0.1.0"
+description = "Music recommendation system based on embedding-space similarity, listening history, and listening context."
+requires-python = ">=3.11"
+dependencies = [
+    "psycopg[binary]>=3.1",
+    "pgvector>=0.2.5",
+    "numpy>=1.26",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+# Heavy, only needed to actually compute audio embeddings.
+audio = [
+    "torch>=2.2",
+    "laion-clap>=1.1.4",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
